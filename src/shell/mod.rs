@@ -3,6 +3,7 @@ pub mod cd_command;
 pub mod echo_command;
 pub mod exit_command;
 pub mod pwd_command;
+pub mod type_command;
 
 use std::collections::HashMap;
 use std::io::{self, Write};
@@ -12,6 +13,7 @@ use cd_command::CdCommand;
 use echo_command::EchoCommand;
 use exit_command::ExitCommand;
 use pwd_command::PwdCommand;
+use type_command::TypeCommand;
 
 pub struct Shell<'a> {
     commands: HashMap<String, Box<dyn Command + 'a>>,
@@ -27,6 +29,13 @@ impl<'a> Shell<'a> {
         shell.commands.insert("echo".to_string(), Box::new(EchoCommand));
         shell.commands.insert("cd".to_string(), Box::new(CdCommand));
         shell.commands.insert("pwd".to_string(), Box::new(PwdCommand));
+
+        // Initialize TypeCommand separately to avoid borrowing issues
+        let builtins_ref = &shell.commands as *const _;
+        unsafe {
+            let type_command = Box::new(TypeCommand::new(&*builtins_ref));
+            shell.commands.insert("type".to_string(), type_command);
+        }
 
         shell
     }
